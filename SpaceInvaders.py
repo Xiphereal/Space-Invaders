@@ -4,7 +4,7 @@ import sys
 from InitScreen import InitScreen 
 
 '''
-This script is a pygame app for recreate Space Invaders.
+This script is a pygame app to recreate Space Invaders.
 @Author: Alejandro 'Xiph' Lozano
 @Date: February of 2019
 '''
@@ -18,6 +18,7 @@ SCREEN_Y_CENTER = HEIGHT / 2
 initialScreen = True
 counter = 0
 direction = 1
+any_bullet = False
 
 #[Pygame Setups]
 pygame.init() 
@@ -30,8 +31,9 @@ InitialScreen = InitScreen()
 #[Gameplay variables]
 player_movement = 5
 enemies_movement = player_movement // 2 
-enemies_rows = 3
-enemies_columns = 5
+enemies_rows = 6
+enemies_columns = 7
+shoot_speed = 10
 
 #[Fonts initialitation]
 font_16 = pygame.font.Font("PressStart2P.ttf", 16)
@@ -119,6 +121,15 @@ while counter < len(spriteID):
         MOTHER_SIZE_X, MOTHER_SIZE_Y =  mothership.get_rect().size[0], \
                                         mothership.get_rect().size[1]
 
+    elif line[0] == "bullet":
+        print("Loading bullet file: " + line[1])
+        bullet = pygame.image.load(line[1])
+        BULLET_SIZE_X, BULLET_SIZE_Y = bullet.get_rect().size[0], \
+                                       bullet.get_rect().size[1]
+        bullet = pygame.transform.scale(bullet, (BULLET_SIZE_X * 2, BULLET_SIZE_Y * 2))
+        BULLET_SIZE_X, BULLET_SIZE_Y = bullet.get_rect().size[0], \
+                                       bullet.get_rect().size[1]
+
     elif line[0] == "background":
         print("Loading background file: " + line[1])
         background = pygame.image.load(line[1])
@@ -126,7 +137,7 @@ while counter < len(spriteID):
     counter += 1
 
 
-screen = pygame.display.set_mode((WIDTH,HEIGHT))
+screen = pygame.display.set_mode((WIDTH,HEIGHT)) #Sets the screen dimensions and store the object
 background = background.convert()
 
 screen.blit(background, (0,0))
@@ -135,11 +146,12 @@ screen.blit(background, (0,0))
 enemy1 = [enemy1_1, enemy1_2] # Those variables store enemies with each animation
 enemy2 = [enemy2_1, enemy2_2]
 enemy3 = [enemy3_1, enemy3_2]
-enemiesList = [[0] * enemies_columns for i in range(enemies_rows)] #List for storing enemies
+enemiesList = [[0] * enemies_columns for i in range(enemies_rows)] #Matrix for storing enemies
 enemiesList_pos = [[0] * enemies_columns for i in range(enemies_rows)] #For storing each enemy position
 
-#[Initial positions sprites]
+#[Initial sprites position]
 player_pos_x = WIDTH / 2 - PLAYER_SIZE_X
+player_pos_y = HEIGHT - PLAYER_SIZE_Y - 30
 
 enemy1_1_pos_x = WIDTH - 30 - ENEMY1_1_SIZE_X
 enemy1_1_pos_y = 30
@@ -148,15 +160,17 @@ enemy2_1_pos_x = WIDTH - 30 - ENEMY2_1_SIZE_X
 enemy2_1_pos_y = enemy1_1_pos_y + ENEMY1_1_SIZE_Y  
 
 enemy3_1_pos_x = WIDTH - 30 - ENEMY3_1_SIZE_X
-enemy3_1_pos_y  = enemy2_1_pos_y + ENEMY2_1_SIZE_Y + 5 
+enemy3_1_pos_y = enemy2_1_pos_y + ENEMY2_1_SIZE_Y + 5 
+
+bullet_pos_x = player_pos_x + PLAYER_SIZE_X // 2 - 5
+bullet_pos_y = player_pos_y + 20
 
 def eventHandler():
     '''
-    This method takes care of everything related with events.
+    This method takes care of everything related with inputs.
     '''
 
-    global initialScreen
-    global player_pos_x
+    global initialScreen, player_pos_x, any_bullet
     keys = pygame.key.get_pressed()
 
     for event in pygame.event.get():
@@ -174,10 +188,19 @@ def eventHandler():
         if player_pos_x >= 15:
             player_pos_x -= player_movement
 
-    if keys[K_RIGHT]: #Player is moving right
+    elif keys[K_RIGHT]: #Player is moving right
         
         if player_pos_x <= WIDTH - PLAYER_SIZE_X - 15:
             player_pos_x += player_movement
+
+    if keys[K_SPACE]: #Player fires!
+        if not any_bullet:
+            bullet_pos_x = player_pos_x + PLAYER_SIZE_X // 2 - 5
+            bullet_pos_y = player_pos_y + 20
+            drawSprite(bullet, bullet_pos_x, bullet_pos_y)
+            any_bullet = True
+
+
 
 def drawSprite(surface, width, height):
     '''
@@ -186,20 +209,6 @@ def drawSprite(surface, width, height):
     screen.blit(surface,(width,height))
 
 def enemiesHandler():
-    global enemy1_1_pos_x, enemy2_1_pos_x, enemy3_1_pos_x, enemy1_1_pos_y, direction
-
-    if enemy1_1_pos_x >= WIDTH - ENEMY1_1_SIZE_X:
-        direction = -1
-        enemy1_1_pos_y += 30
-    elif enemy1_1_pos_x <= 0:
-        direction = 1
-        enemy1_1_pos_y += 30
-    
-    enemy1_1_pos_x += enemies_movement * direction
-    enemy2_1_pos_x += enemies_movement * direction
-    enemy3_1_pos_x += enemies_movement * direction
-
-def ALTenemiesHandler():
     global enemy1_1_pos_x, enemy2_1_pos_x, enemy3_1_pos_x, enemy1_1_pos_y, direction
     
     i = 0
@@ -219,6 +228,14 @@ def ALTenemiesHandler():
     enemy2_1_pos_x += enemies_movement * direction
     enemy3_1_pos_x += enemies_movement * direction
   
+def shootHandler():
+    global bullet_pos_y, any_bullet
+    if bullet_pos_y > 0 and any_bullet:
+        bullet_pos_y -= shoot_speed
+        drawSprite(bullet, bullet_pos_x, bullet_pos_y)
+    else:
+        any_bullet = False
+
 def initializeEnemies():
     '''
     Loads all enemies into enemiesList variable in a matrix form.
@@ -227,11 +244,11 @@ def initializeEnemies():
     while i < enemies_rows:
         j = 0
         while j < enemies_columns:
-            if i == 0: #Enemy1
+            if i % 3 == 0: #Enemy1
                 enemiesList[i][j] = enemy1
-            elif i == 1: #Enemy2
+            elif i % 3 == 1: #Enemy2
                 enemiesList[i][j] = enemy2
-            elif i == 2: #Enemy3
+            elif i % 3 == 2: #Enemy3
                 enemiesList[i][j] = enemy3
             j += 1
         i += 1
@@ -266,12 +283,13 @@ while True: #main game loop
         screen.blit(background,(0,0))
         eventHandler()
         
-        drawSprite(player, player_pos_x, HEIGHT - PLAYER_SIZE_Y - 30)
+        drawSprite(player, player_pos_x, player_pos_y)
         #drawSprite(enemy1_1, enemy1_1_pos_x, enemy1_1_pos_y)
         #drawSprite(enemy2_1, enemy2_1_pos_x, enemy2_1_pos_y)
         #drawSprite(enemy3_1, enemy3_1_pos_x, enemy3_1_pos_y)
         initializeEnemies()
-        ALTenemiesHandler()
+        enemiesHandler()
+        shootHandler()
 
     pygame.display.update()
     fpsClock.tick(30)
