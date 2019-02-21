@@ -1,6 +1,7 @@
 from pygame.locals import *
 import pygame
 import sys
+import random
 from InitScreen import InitScreen 
 
 '''
@@ -19,6 +20,7 @@ initialScreen = True
 counter = 0
 direction = 1
 any_bullet = False
+spawn_mothership = False
 
 #[Pygame Setups]
 pygame.init() 
@@ -33,7 +35,8 @@ player_movement = 5
 enemies_movement = player_movement // 2 
 enemies_rows = 6
 enemies_columns = 7
-shoot_speed = 10
+mothership_movement = 7
+shoot_speed = 22
 
 #[Fonts initialitation]
 font_16 = pygame.font.Font("PressStart2P.ttf", 16)
@@ -162,8 +165,11 @@ enemy2_1_pos_y = enemy1_1_pos_y + ENEMY1_1_SIZE_Y
 enemy3_1_pos_x = WIDTH - 30 - ENEMY3_1_SIZE_X
 enemy3_1_pos_y = enemy2_1_pos_y + ENEMY2_1_SIZE_Y + 5 
 
-bullet_pos_x = player_pos_x + PLAYER_SIZE_X // 2 - 5
-bullet_pos_y = player_pos_y + 20
+mothership_pos_x = 0 - MOTHER_SIZE_X
+mothership_pos_y = 25
+
+bullet_pos_x = player_pos_x + PLAYER_SIZE_X // 2 - 6
+bullet_pos_y = player_pos_y + 12
 
 def eventHandler():
     '''
@@ -195,8 +201,8 @@ def eventHandler():
 
     if keys[K_SPACE]: #Player fires!
         if not any_bullet:
-            bullet_pos_x = player_pos_x + PLAYER_SIZE_X // 2 - 5
-            bullet_pos_y = player_pos_y + 20
+            bullet_pos_x = player_pos_x + PLAYER_SIZE_X // 2 - 6
+            bullet_pos_y = player_pos_y + 12
             drawSprite(bullet, bullet_pos_x, bullet_pos_y)
             any_bullet = True
 
@@ -227,13 +233,36 @@ def enemiesHandler():
     enemy1_1_pos_x += enemies_movement * direction
     enemy2_1_pos_x += enemies_movement * direction
     enemy3_1_pos_x += enemies_movement * direction
-  
+
+def mothershipHandler():
+    global mothership_pos_x, mothership_pos_y, spawn_mothership
+    
+    spawn_proc = random.randint(1,1000)
+    print(spawn_proc)
+    if spawn_proc % 500 == 0:
+        spawn_mothership = True
+
+    if mothership_pos_x >= 0 - MOTHER_SIZE_X  \
+            and mothership_pos_x <= WIDTH \
+            and spawn_mothership:
+
+        drawSprite(mothership, mothership_pos_x, mothership_pos_y)
+        mothership_pos_x += mothership_movement
+    else:
+        mothership_pos_x = 0 - MOTHER_SIZE_X
+        spawn_mothership = False
+
 def shootHandler():
-    global bullet_pos_y, any_bullet
+    global bullet_pos_x, bullet_pos_y, any_bullet
+    #print(any_bullet)
+    #print("Bullet before if: ", bullet_pos_y)
     if bullet_pos_y > 0 and any_bullet:
+        #print(bullet_pos_y)
         bullet_pos_y -= shoot_speed
         drawSprite(bullet, bullet_pos_x, bullet_pos_y)
     else:
+        bullet_pos_x = player_pos_x + PLAYER_SIZE_X // 2 - 6
+        bullet_pos_y = player_pos_y + 12
         any_bullet = False
 
 def initializeEnemies():
@@ -289,6 +318,7 @@ while True: #main game loop
         #drawSprite(enemy3_1, enemy3_1_pos_x, enemy3_1_pos_y)
         initializeEnemies()
         enemiesHandler()
+        mothershipHandler()
         shootHandler()
 
     pygame.display.update()
