@@ -2,7 +2,7 @@ from pygame.locals import *
 import pygame
 import sys
 import random
-from InitScreen import InitScreen 
+from InitScreen import InitScreen
 
 '''
 This script is a pygame app to recreate Space Invaders.
@@ -16,14 +16,14 @@ WIDTH = 480
 SCREEN_X_CENTER = WIDTH / 2
 SCREEN_Y_CENTER = HEIGHT / 2
 
-initialScreen = True
-counter = 0
 direction = 1
+increase_speed_counter = 1 
+initialScreen = True
 any_bullet = False
 spawn_mothership = False
 
 #[Pygame Setups]
-pygame.init() 
+pygame.init()
 pygame.display.set_caption("Space Invaders") #Sets the window title
 fpsClock = pygame.time.Clock()
 
@@ -32,9 +32,12 @@ InitialScreen = InitScreen()
 
 #[Gameplay variables]
 player_movement = 5
-enemies_movement = player_movement // 2 
+
+enemies_movement = 1
 enemies_rows = 6
 enemies_columns = 7
+enemies_speed_increase = 1
+
 mothership_movement = 7
 shoot_speed = 22
 
@@ -46,9 +49,10 @@ font_35 = pygame.font.Font("PressStart2P.ttf", 35)
 #Stores "spriteID.txt" content in a list. Then, evaluates the ID for loading sprites.
 spriteID = open("spritesID.txt").readlines()
 
+counter = 0
 while counter < len(spriteID):
     line = spriteID[counter].split()
-    SRF = 4 #Sprite Redimension Factor: How much will the sprites be downscaled. 
+    SRF = 4 #Sprite Redimension Factor: How much will the sprites be downscaled.
 
     if line[0] == "player":
         print("Loading player file: " + line[1])
@@ -58,10 +62,10 @@ while counter < len(spriteID):
         print (PLAYER_SIZE_X, PLAYER_SIZE_Y)
         player = pygame.transform.scale(player, (PLAYER_SIZE_X//2, PLAYER_SIZE_Y//2))
         PLAYER_SIZE_X, PLAYER_SIZE_Y = player.get_rect().size[0], \
-                                        player.get_rect().size[1] 
-    
+                                        player.get_rect().size[1]
+
     elif line[0] == "enemy1_1":
-        print("Loading enemy1_1 file: " + line[1]) 
+        print("Loading enemy1_1 file: " + line[1])
         enemy1_1 = pygame.image.load(line[1])
         ENEMY1_1_SIZE_X, ENEMY1_1_SIZE_Y =  enemy1_1.get_rect().size[0], \
                                             enemy1_1.get_rect().size[1]
@@ -69,7 +73,7 @@ while counter < len(spriteID):
         enemy1_1 = pygame.transform.scale(enemy1_1, (ENEMY1_1_SIZE_X//SRF, ENEMY1_1_SIZE_Y//SRF))
         ENEMY1_1_SIZE_X, ENEMY1_1_SIZE_Y =  enemy1_1.get_rect().size[0], \
                                             enemy1_1.get_rect().size[1]
-        
+
     elif line[0] == "enemy1_2":
         print("Loading enemy1_2 file: " + line[1])
         enemy1_2 = pygame.image.load(line[1])
@@ -160,10 +164,10 @@ enemy1_1_pos_x = WIDTH - 30 - ENEMY1_1_SIZE_X
 enemy1_1_pos_y = 30
 
 enemy2_1_pos_x = WIDTH - 30 - ENEMY2_1_SIZE_X
-enemy2_1_pos_y = enemy1_1_pos_y + ENEMY1_1_SIZE_Y  
+enemy2_1_pos_y = enemy1_1_pos_y + ENEMY1_1_SIZE_Y
 
 enemy3_1_pos_x = WIDTH - 30 - ENEMY3_1_SIZE_X
-enemy3_1_pos_y = enemy2_1_pos_y + ENEMY2_1_SIZE_Y + 5 
+enemy3_1_pos_y = enemy2_1_pos_y + ENEMY2_1_SIZE_Y + 5
 
 mothership_pos_x = 0 - MOTHER_SIZE_X
 mothership_pos_y = 25
@@ -180,22 +184,22 @@ def eventHandler():
     keys = pygame.key.get_pressed()
 
     for event in pygame.event.get():
-       
+
         if event.type == pygame.QUIT or keys[K_ESCAPE]:
             pygame.quit()
             sys.exit()
 
         if event.type == pygame.KEYDOWN and initialScreen:
-            print("Some key pressed")
+            #print("Some key pressed")
             initialScreen = False
 
     if keys[K_LEFT]: #Player is moving left
-        
+
         if player_pos_x >= 15:
             player_pos_x -= player_movement
 
     elif keys[K_RIGHT]: #Player is moving right
-        
+
         if player_pos_x <= WIDTH - PLAYER_SIZE_X - 15:
             player_pos_x += player_movement
 
@@ -216,29 +220,47 @@ def drawSprite(surface, width, height):
 
 def enemiesHandler():
     global enemy1_1_pos_x, enemy2_1_pos_x, enemy3_1_pos_x, enemy1_1_pos_y, direction
-    
+    global increase_speed_counter, enemies_movement
+
+    already_line_down = False
     i = 0
     while i < enemies_rows:
         j = 0
         while j < enemies_columns:
             if enemiesList_pos[i][j][0] >= WIDTH - ENEMY1_1_SIZE_X:
                 direction = -1
-                enemy1_1_pos_y += 10
+
+                if not already_line_down:
+                    enemy1_1_pos_y += 10
+                    already_line_down = True
+
             elif enemiesList_pos[i][j][0] <= 0:
                 direction = 1
-                enemy1_1_pos_y += 10
+
+                if not already_line_down:
+                    enemy1_1_pos_y += 10
+                    already_line_down = True
+
             j += 1
         i += 1
 
+    #After a while, increase the enemies movement.
+    if increase_speed_counter % 120 == 0:
+        enemies_movement += enemies_speed_increase
+    
+    increase_speed_counter += 1
+
+    print("Enemies movement: ", enemies_movement)
+    print("Increased speed counter: ", increase_speed_counter)
     enemy1_1_pos_x += enemies_movement * direction
     enemy2_1_pos_x += enemies_movement * direction
     enemy3_1_pos_x += enemies_movement * direction
 
 def mothershipHandler():
     global mothership_pos_x, mothership_pos_y, spawn_mothership
-    
+
     spawn_proc = random.randint(1,1000)
-    print(spawn_proc)
+    #print(spawn_proc)
     if spawn_proc % 500 == 0:
         spawn_mothership = True
 
@@ -290,7 +312,7 @@ def initializeEnemies():
         j = 0
         for enemy in row:
             drawSprite(enemy[0], enemy1_1_pos_x - offset_x, enemy1_1_pos_y + offset_y)
-            
+
             #Store each enemy position in a list.
             enemiesList_pos[i][j] = [enemy1_1_pos_x - offset_x, enemy1_1_pos_y + offset_y]
             offset_x += 40
@@ -301,17 +323,17 @@ def initializeEnemies():
 while True: #main game loop
     if initialScreen: #This code only executes when we're in the initial screen.
         InitialScreen.initialScreenHandler(font_16, font_18, font_35, screen)
-        
+
         if InitialScreen.blink_counter == 50:
             InitialScreen.blink_counter = 0
         else:
             InitialScreen.blink_counter += 1
-        
+
         eventHandler()
     else:
         screen.blit(background,(0,0))
         eventHandler()
-        
+
         drawSprite(player, player_pos_x, player_pos_y)
         #drawSprite(enemy1_1, enemy1_1_pos_x, enemy1_1_pos_y)
         #drawSprite(enemy2_1, enemy2_1_pos_x, enemy2_1_pos_y)
