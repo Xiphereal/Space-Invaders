@@ -175,6 +175,24 @@ mothership_pos_y = 25
 bullet_pos_x = player_pos_x + PLAYER_SIZE_X // 2 - 6
 bullet_pos_y = player_pos_y + 12
 
+
+    
+
+#Loads all enemies into enemiesList variable, in a matrix form.
+i = 0
+while i < enemies_rows:
+    j = 0
+    while j < enemies_columns:
+        if i % 3 == 0: #Enemy1
+            enemiesList[i][j] = enemy1
+        elif i % 3 == 1: #Enemy2
+            enemiesList[i][j] = enemy2
+        elif i % 3 == 2: #Enemy3
+            enemiesList[i][j] = enemy3
+        j += 1
+    i += 1
+#print(enemiesList)
+
 def eventHandler():
     '''
     This method takes care of everything related with inputs.
@@ -210,48 +228,66 @@ def eventHandler():
             drawSprite(bullet, bullet_pos_x, bullet_pos_y)
             any_bullet = True
 
-
-
 def drawSprite(surface, width, height):
     '''
     Method for drawing sprites.
     '''
     screen.blit(surface,(width,height))
 
+def isColliding(pos_x, pos_y, size_x, size_y):
+    '''
+    Checks if sprite passed is colliding with the bullet. 
+    '''
+    global bullet_pos_x, bullet_pos_y
+    return (bullet_pos_x >= pos_x and bullet_pos_x <= pos_x + size_x) and \
+            (bullet_pos_y >= pos_y and bullet_pos_y <= pos_y + size_y) 
+
 def enemiesHandler():
+    '''
+    Method for all the related stuff going on with enemies.
+    '''
     global enemy1_1_pos_x, enemy2_1_pos_x, enemy3_1_pos_x, enemy1_1_pos_y, direction
     global increase_speed_counter, enemies_movement
+    global any_bullet
 
-    already_line_down = False
+    row_already_lowered = False
     i = 0
     while i < enemies_rows:
         j = 0
         while j < enemies_columns:
+
+            #Check if the actual enemy is colliding with the bullet 
+            if isColliding(enemiesList_pos[i][j][0], enemiesList_pos[i][j][1], \
+                            ENEMY1_1_SIZE_X, ENEMY1_1_SIZE_Y):
+                print("Colliding with: ", enemiesList[i][j])
+                any_bullet = False #Deletes bullet
+                enemiesList_pos[i][j] = [1000, 1000] #""""""""deletes"""""""" the enemy.
+
             if enemiesList_pos[i][j][0] >= WIDTH - ENEMY1_1_SIZE_X:
                 direction = -1
 
-                if not already_line_down:
+                if not row_already_lowered:
                     enemy1_1_pos_y += 10
-                    already_line_down = True
+                    row_already_lowered = True
 
             elif enemiesList_pos[i][j][0] <= 0:
                 direction = 1
 
-                if not already_line_down:
+                if not row_already_lowered:
                     enemy1_1_pos_y += 10
-                    already_line_down = True
+                    row_already_lowered = True
 
             j += 1
         i += 1
 
-    #After a while, increase the enemies movement.
-    if increase_speed_counter % 120 == 0:
+    #After a while, increases the enemies movement.
+    if increase_speed_counter % 300 == 0:
         enemies_movement += enemies_speed_increase
     
     increase_speed_counter += 1
 
-    print("Enemies movement: ", enemies_movement)
-    print("Increased speed counter: ", increase_speed_counter)
+    #print("Enemies movement: ", enemies_movement)
+    #print("Increased speed counter: ", increase_speed_counter)
     enemy1_1_pos_x += enemies_movement * direction
     enemy2_1_pos_x += enemies_movement * direction
     enemy3_1_pos_x += enemies_movement * direction
@@ -287,24 +323,10 @@ def shootHandler():
         bullet_pos_y = player_pos_y + 12
         any_bullet = False
 
-def initializeEnemies():
+def drawEnemies():
     '''
-    Loads all enemies into enemiesList variable in a matrix form.
-    '''
-    i = 0
-    while i < enemies_rows:
-        j = 0
-        while j < enemies_columns:
-            if i % 3 == 0: #Enemy1
-                enemiesList[i][j] = enemy1
-            elif i % 3 == 1: #Enemy2
-                enemiesList[i][j] = enemy2
-            elif i % 3 == 2: #Enemy3
-                enemiesList[i][j] = enemy3
-            j += 1
-        i += 1
-
-    #print(enemiesList)
+    Draws all enemies inside enemiesList variable.
+    '''  
     offset_y = 0
     i = 0
     for row in enemiesList:
@@ -320,7 +342,10 @@ def initializeEnemies():
         offset_y += 40
         i += 1
 
-while True: #main game loop
+while True: 
+    '''
+    Main game loop.
+    '''
     if initialScreen: #This code only executes when we're in the initial screen.
         InitialScreen.initialScreenHandler(font_16, font_18, font_35, screen)
 
@@ -338,7 +363,7 @@ while True: #main game loop
         #drawSprite(enemy1_1, enemy1_1_pos_x, enemy1_1_pos_y)
         #drawSprite(enemy2_1, enemy2_1_pos_x, enemy2_1_pos_y)
         #drawSprite(enemy3_1, enemy3_1_pos_x, enemy3_1_pos_y)
-        initializeEnemies()
+        drawEnemies()
         enemiesHandler()
         mothershipHandler()
         shootHandler()
