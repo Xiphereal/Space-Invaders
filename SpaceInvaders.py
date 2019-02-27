@@ -2,6 +2,7 @@ from pygame.locals import *
 import pygame
 import sys
 import random
+import numpy as np
 from InitScreen import InitScreen
 
 '''
@@ -155,6 +156,7 @@ enemy2 = [enemy2_1, enemy2_2]
 enemy3 = [enemy3_1, enemy3_2]
 enemiesList = [[0] * enemies_columns for i in range(enemies_rows)] #Matrix for storing enemies
 enemiesList_pos = [[0] * enemies_columns for i in range(enemies_rows)] #For storing each enemy position
+enemiesList_active = np.zeros((enemies_rows, enemies_columns), dtype = bool) #For storing, ehh... yeah, another list
 
 #[Initial sprites position]
 player_pos_x = WIDTH / 2 - PLAYER_SIZE_X
@@ -183,12 +185,15 @@ i = 0
 while i < enemies_rows:
     j = 0
     while j < enemies_columns:
+       
         if i % 3 == 0: #Enemy1
             enemiesList[i][j] = enemy1
         elif i % 3 == 1: #Enemy2
             enemiesList[i][j] = enemy2
         elif i % 3 == 2: #Enemy3
             enemiesList[i][j] = enemy3
+        enemiesList_active[i,j] = True
+
         j += 1
     i += 1
 #print(enemiesList)
@@ -258,11 +263,11 @@ def enemiesHandler():
 
             #Check if the actual enemy is colliding with the bullet 
             if isColliding(enemiesList_pos[i][j][0], enemiesList_pos[i][j][1], \
-                            ENEMY1_1_SIZE_X, ENEMY1_1_SIZE_Y):
+                            ENEMY1_1_SIZE_X, ENEMY1_1_SIZE_Y) and enemiesList_active[i,j] == True:
                 print("Colliding with: ", enemiesList[i][j])
                 any_bullet = False #Deletes bullet
-                enemiesList_pos[i][j] = [1000, 1000] #""""""""deletes"""""""" the enemy.
-
+                enemiesList_active[i,j] = False #""""""""deletes"""""""" the enemy.
+            
             if enemiesList_pos[i][j][0] >= WIDTH - ENEMY1_1_SIZE_X:
                 direction = -1
 
@@ -333,10 +338,12 @@ def drawEnemies():
         offset_x = 0
         j = 0
         for enemy in row:
-            drawSprite(enemy[0], enemy1_1_pos_x - offset_x, enemy1_1_pos_y + offset_y)
+            
+            if enemiesList_active[i][j] == True:
+                drawSprite(enemy[0], enemy1_1_pos_x - offset_x, enemy1_1_pos_y + offset_y)
+                #Store each enemy position in a list.
+                enemiesList_pos[i][j] = [enemy1_1_pos_x - offset_x, enemy1_1_pos_y + offset_y]
 
-            #Store each enemy position in a list.
-            enemiesList_pos[i][j] = [enemy1_1_pos_x - offset_x, enemy1_1_pos_y + offset_y]
             offset_x += 40
             j += 1
         offset_y += 40
