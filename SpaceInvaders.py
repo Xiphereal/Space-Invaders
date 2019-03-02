@@ -24,7 +24,6 @@ initialScreen = True
 any_bullet = False
 any_enemy_bullet = False
 mothership_spawn = False
-enemy_shoot_spawn = False
 
 #[Pygame Setups]
 pygame.init()
@@ -36,14 +35,16 @@ InitialScreen = InitScreen()
 
 #[Gameplay variables]
 player_movement = 5
+shoot_speed = 22
 
-enemies_movement = 1
 enemies_rows = 6
 enemies_columns = 7
+enemies_movement = 1
 enemies_speed_increase = 1
+enemies_bullet_speed = 10
 
 mothership_movement = 7
-shoot_speed = 22
+
 
 #[Fonts initialitation]
 font_16 = pygame.font.Font("PressStart2P.ttf", 16)
@@ -64,7 +65,7 @@ while counter < len(spriteID):
         PLAYER_SIZE_X, PLAYER_SIZE_Y = player.get_rect().size[0], \
                                         player.get_rect().size[1]
         print (PLAYER_SIZE_X, PLAYER_SIZE_Y)
-        player = pygame.transform.scale(player, (PLAYER_SIZE_X//2, PLAYER_SIZE_Y//2))
+        player = pygame.transform.scale(player, (PLAYER_SIZE_X//3, PLAYER_SIZE_Y//3))
         PLAYER_SIZE_X, PLAYER_SIZE_Y = player.get_rect().size[0], \
                                         player.get_rect().size[1]
 
@@ -298,12 +299,14 @@ def enemiesHandler():
             
             #Check if the enemy is able to shoot.
             if frontEnemy(i,j):
-                if enemiesList_active[i,j] == True:
-                    if enemiesList_bullets[i,j] == 0:
-                        enemiesList_bullets[i,j] = EnemyBullet()
-                    enemyShootHandler(enemiesList_bullets[i,j], \
-                                        enemiesList_pos[i][j][0], enemiesList_pos[i][j][1])
+
+                if enemiesList_bullets[i,j] == 0:
+                    enemiesList_bullets[i,j] = EnemyBullet()
+                enemyShootHandler(enemiesList_bullets[i,j], \
+                                    enemiesList_pos[i][j][0], enemiesList_pos[i][j][1])
+            #If the enemy is killed (either it's not front enemy any more), bullet keeps traveling.
             elif enemiesList_bullets[i,j] != 0 and enemiesList_bullets[i,j].getSpawn(): 
+                
                     enemyShootHandler(enemiesList_bullets[i,j], \
                                         enemiesList_pos[i][j][0], enemiesList_pos[i][j][1])
 
@@ -311,21 +314,21 @@ def enemiesHandler():
                 direction = -1
 
                 if not row_already_lowered:
-                    enemy1_1_pos_y += 10
+                    enemy1_1_pos_y += 20
                     row_already_lowered = True
 
             elif enemiesList_pos[i][j][0] <= 0:
                 direction = 1
 
                 if not row_already_lowered:
-                    enemy1_1_pos_y += 10
+                    enemy1_1_pos_y += 20
                     row_already_lowered = True
 
             j += 1
         i += 1
 
     #After a while, increases the enemies movement.
-    if increase_speed_counter % 300 == 0:
+    if increase_speed_counter % 500 == 0:
         enemies_movement += enemies_speed_increase
     
     increase_speed_counter += 1
@@ -380,7 +383,7 @@ def enemyShootHandler(bullet_instance, pos_x, pos_y):
     if bullet_instance.getPosY() < HEIGHT - ENEMY_BULLET_SIZE_Y \
             and bullet_instance.getSpawn():
         #print("Updating enemy bullet position")
-        bullet_instance.setPosY(bullet_instance.getPosY() + 4)
+        bullet_instance.setPosY(bullet_instance.getPosY() + enemies_bullet_speed)
         #print(bullet_instance.getPosY())
         drawSprite(enemy_bullet, bullet_instance.getPosX(), bullet_instance.getPosY())
     else:
