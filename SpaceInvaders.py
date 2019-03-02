@@ -4,6 +4,7 @@ import sys
 import random
 import numpy as np
 from InitScreen import InitScreen
+from EnemyBullet import EnemyBullet
 
 '''
 This script is a pygame app to recreate Space Invaders.
@@ -21,7 +22,9 @@ direction = 1
 increase_speed_counter = 1 
 initialScreen = True
 any_bullet = False
-spawn_mothership = False
+any_enemy_bullet = False
+mothership_spawn = False
+enemy_shoot_spawn = False
 
 #[Pygame Setups]
 pygame.init()
@@ -137,6 +140,14 @@ while counter < len(spriteID):
         bullet = pygame.transform.scale(bullet, (BULLET_SIZE_X * 2, BULLET_SIZE_Y * 2))
         BULLET_SIZE_X, BULLET_SIZE_Y = bullet.get_rect().size[0], \
                                        bullet.get_rect().size[1]
+    elif line[0] == "enemy_bullet":
+        print("Loading bullet file: " + line[1])
+        enemy_bullet = pygame.image.load(line[1])
+        ENEMY_BULLET_SIZE_X, ENEMY_BULLET_SIZE_Y = enemy_bullet.get_rect().size[0], \
+                                       enemy_bullet.get_rect().size[1]
+        enemy_bullet = pygame.transform.scale(enemy_bullet, (ENEMY_BULLET_SIZE_X * 2, ENEMY_BULLET_SIZE_Y * 2))
+        ENEMY_BULLET_SIZE_X, ENEMY_BULLET_SIZE_Y = enemy_bullet.get_rect().size[0], \
+                                       enemy_bullet.get_rect().size[1]
 
     elif line[0] == "background":
         print("Loading background file: " + line[1])
@@ -145,18 +156,19 @@ while counter < len(spriteID):
     counter += 1
 
 
-screen = pygame.display.set_mode((WIDTH,HEIGHT)) #Sets the screen dimensions and store the object
+screen = pygame.display.set_mode((WIDTH,HEIGHT)) #Sets the screen dimensions and store the object.
 background = background.convert()
 
 screen.blit(background, (0,0))
 
 #[Enemies Handler Variables]
-enemy1 = [enemy1_1, enemy1_2] # Those variables store enemies with each animation
+enemy1 = [enemy1_1, enemy1_2] # Those variables store enemies with each animation.
 enemy2 = [enemy2_1, enemy2_2]
 enemy3 = [enemy3_1, enemy3_2]
-enemiesList = [[0] * enemies_columns for i in range(enemies_rows)] #Matrix for storing enemies
-enemiesList_pos = [[0] * enemies_columns for i in range(enemies_rows)] #For storing each enemy position
-enemiesList_active = np.zeros((enemies_rows, enemies_columns), dtype = bool) #For storing, ehh... yeah, another list
+enemiesList = [[0] * enemies_columns for i in range(enemies_rows)] #Matrix for storing enemies.
+enemiesList_pos = [[0] * enemies_columns for i in range(enemies_rows)] #For storing each enemy position.
+enemiesList_active = np.zeros((enemies_rows, enemies_columns), dtype = bool) #For storing, ehh... yeah, another list.
+enemiesList_bullets = np.zeros((enemies_rows, enemies_columns), dtype = EnemyBullet) #U think we already had enought list?.
 
 #[Initial sprites position]
 player_pos_x = WIDTH / 2 - PLAYER_SIZE_X
@@ -177,8 +189,8 @@ mothership_pos_y = 25
 bullet_pos_x = player_pos_x + PLAYER_SIZE_X // 2 - 6
 bullet_pos_y = player_pos_y + 12
 
-
-    
+#enemy_bullet_pos_x = -1000 
+#enemy_bullet_pos_y = -1000
 
 #Loads all enemies into enemiesList variable, in a matrix form.
 i = 0
@@ -247,13 +259,29 @@ def isColliding(pos_x, pos_y, size_x, size_y):
     return (bullet_pos_x >= pos_x and bullet_pos_x <= pos_x + size_x) and \
             (bullet_pos_y >= pos_y and bullet_pos_y <= pos_y + size_y) 
 
+def frontEnemy(target_i,target_j):
+    '''
+    Iterates through the column looking for the lowest active enemy.
+    Is the lower enemy the actual enemy? Then open fire!
+    '''
+    lower_enemy = -1
+
+    i = 0
+    while i < enemies_rows:
+        lower_enemy = i if enemiesList_active[i][target_j] == True else lower_enemy
+        i += 1
+
+    return target_i == lower_enemy 
+
+
 def enemiesHandler():
     '''
     Method for all the related stuff going on with enemies.
     '''
     global enemy1_1_pos_x, enemy2_1_pos_x, enemy3_1_pos_x, enemy1_1_pos_y, direction
     global increase_speed_counter, enemies_movement
-    global any_bullet
+    global any_bullet, aux
+
 
     row_already_lowered = False
     i = 0
@@ -261,13 +289,24 @@ def enemiesHandler():
         j = 0
         while j < enemies_columns:
 
-            #Check if the actual enemy is colliding with the bullet 
+            #Check if the actual enemy is colliding with the bullet. 
             if isColliding(enemiesList_pos[i][j][0], enemiesList_pos[i][j][1], \
                             ENEMY1_1_SIZE_X, ENEMY1_1_SIZE_Y) and enemiesList_active[i,j] == True:
-                print("Colliding with: ", enemiesList[i][j])
+                #print("Colliding with: ", enemiesList[i][j])
                 any_bullet = False #Deletes bullet
                 enemiesList_active[i,j] = False #""""""""deletes"""""""" the enemy.
             
+            #Check if the enemy is able to shoot.
+            if frontEnemy(i,j):
+                if enemiesList_active[i,j] == True:
+                    if enemiesList_bullets[i,j] == 0:
+                        enemiesList_bullets[i,j] = EnemyBullet()
+                    enemyShootHandler(enemiesList_bullets[i,j], \
+                                        enemiesList_pos[i][j][0], enemiesList_pos[i][j][1])
+            elif enemiesList_bullets[i,j] != 0 and enemiesList_bullets[i,j].getSpawn(): 
+                    enemyShootHandler(enemiesList_bullets[i,j], \
+                                        enemiesList_pos[i][j][0], enemiesList_pos[i][j][1])
+
             if enemiesList_pos[i][j][0] >= WIDTH - ENEMY1_1_SIZE_X:
                 direction = -1
 
@@ -298,22 +337,22 @@ def enemiesHandler():
     enemy3_1_pos_x += enemies_movement * direction
 
 def mothershipHandler():
-    global mothership_pos_x, mothership_pos_y, spawn_mothership
+    global mothership_pos_x, mothership_pos_y, mothership_spawn
 
     spawn_proc = random.randint(1,1000)
     #print(spawn_proc)
     if spawn_proc % 500 == 0:
-        spawn_mothership = True
+        mothership_spawn = True
 
     if mothership_pos_x >= 0 - MOTHER_SIZE_X  \
             and mothership_pos_x <= WIDTH \
-            and spawn_mothership:
+            and mothership_spawn:
 
         drawSprite(mothership, mothership_pos_x, mothership_pos_y)
         mothership_pos_x += mothership_movement
     else:
         mothership_pos_x = 0 - MOTHER_SIZE_X
-        spawn_mothership = False
+        mothership_spawn = False
 
 def shootHandler():
     global bullet_pos_x, bullet_pos_y, any_bullet
@@ -327,6 +366,29 @@ def shootHandler():
         bullet_pos_x = player_pos_x + PLAYER_SIZE_X // 2 - 6
         bullet_pos_y = player_pos_y + 12
         any_bullet = False
+
+def enemyShootHandler(bullet_instance, pos_x, pos_y):
+    #global enemy_bullet_pos_x, enemy_bullet_pos_y, 
+    #global enemy_shoot_spawn
+
+    enemy_shoot_proc = random.randint(1,1000)
+    #print(enemy_shoot_proc)
+    if enemy_shoot_proc % 250 == 0:
+        print("Shooting!")
+        bullet_instance.setSpawn(True)
+        
+    if bullet_instance.getPosY() < HEIGHT - ENEMY_BULLET_SIZE_Y \
+            and bullet_instance.getSpawn():
+        #print("Updating enemy bullet position")
+        bullet_instance.setPosY(bullet_instance.getPosY() + 4)
+        #print(bullet_instance.getPosY())
+        drawSprite(enemy_bullet, bullet_instance.getPosX(), bullet_instance.getPosY())
+    else:
+        bullet_instance.setPosX(pos_x + ENEMY1_1_SIZE_X // 2)
+        bullet_instance.setPosY(pos_y + ENEMY1_1_SIZE_Y)
+        #Destroy bullet
+        bullet_instance.setSpawn(False)
+
 
 def drawEnemies():
     '''
@@ -374,6 +436,7 @@ while True:
         enemiesHandler()
         mothershipHandler()
         shootHandler()
+        
 
     pygame.display.update()
     fpsClock.tick(30)

@@ -8,3 +8,4 @@ enemy3_2 Enemy3_2.png
 mothership Mothership.png
 background Background.png
 bullet Bullet.png
+enemy_bullet Enemy_bullet.png
