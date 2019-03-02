@@ -42,6 +42,7 @@ enemies_columns = 7
 enemies_movement = 1
 enemies_speed_increase = 1
 enemies_bullet_speed = 10
+enemies_limit = HEIGHT - 70
 
 mothership_movement = 7
 
@@ -64,7 +65,6 @@ while counter < len(spriteID):
         player = pygame.image.load(line[1])
         PLAYER_SIZE_X, PLAYER_SIZE_Y = player.get_rect().size[0], \
                                         player.get_rect().size[1]
-        print (PLAYER_SIZE_X, PLAYER_SIZE_Y)
         player = pygame.transform.scale(player, (PLAYER_SIZE_X//3, PLAYER_SIZE_Y//3))
         PLAYER_SIZE_X, PLAYER_SIZE_Y = player.get_rect().size[0], \
                                         player.get_rect().size[1]
@@ -74,7 +74,6 @@ while counter < len(spriteID):
         enemy1_1 = pygame.image.load(line[1])
         ENEMY1_1_SIZE_X, ENEMY1_1_SIZE_Y =  enemy1_1.get_rect().size[0], \
                                             enemy1_1.get_rect().size[1]
-        print (ENEMY1_1_SIZE_X, ENEMY1_1_SIZE_Y)
         enemy1_1 = pygame.transform.scale(enemy1_1, (ENEMY1_1_SIZE_X//SRF, ENEMY1_1_SIZE_Y//SRF))
         ENEMY1_1_SIZE_X, ENEMY1_1_SIZE_Y =  enemy1_1.get_rect().size[0], \
                                             enemy1_1.get_rect().size[1]
@@ -160,8 +159,6 @@ while counter < len(spriteID):
 screen = pygame.display.set_mode((WIDTH,HEIGHT)) #Sets the screen dimensions and store the object.
 background = background.convert()
 
-screen.blit(background, (0,0))
-
 #[Enemies Handler Variables]
 enemy1 = [enemy1_1, enemy1_2] # Those variables store enemies with each animation.
 enemy2 = [enemy2_1, enemy2_2]
@@ -176,7 +173,7 @@ player_pos_x = WIDTH / 2 - PLAYER_SIZE_X
 player_pos_y = HEIGHT - PLAYER_SIZE_Y - 30
 
 enemy1_1_pos_x = WIDTH - 30 - ENEMY1_1_SIZE_X
-enemy1_1_pos_y = 30
+enemy1_1_pos_y = 50
 
 enemy2_1_pos_x = WIDTH - 30 - ENEMY2_1_SIZE_X
 enemy2_1_pos_y = enemy1_1_pos_y + ENEMY1_1_SIZE_Y
@@ -252,13 +249,14 @@ def drawSprite(surface, width, height):
     '''
     screen.blit(surface,(width,height))
 
-def isColliding(pos_x, pos_y, size_x, size_y):
+def isColliding(pos_x, pos_y, width, height, bullet_x, bullet_y):
     '''
-    Checks if sprite passed is colliding with the bullet. 
+    Checks if the sprite passed is colliding with the bullet. 
     '''
-    global bullet_pos_x, bullet_pos_y
-    return (bullet_pos_x >= pos_x and bullet_pos_x <= pos_x + size_x) and \
-            (bullet_pos_y >= pos_y and bullet_pos_y <= pos_y + size_y) 
+    #global bullet_pos_x, bullet_pos_y
+    #print(bullet_x, " ", bullet_x)
+    return (bullet_x >= pos_x and bullet_x <= pos_x + width) and \
+            (bullet_y >= pos_y and bullet_y <= pos_y + height) 
 
 def frontEnemy(target_i,target_j):
     '''
@@ -292,10 +290,11 @@ def enemiesHandler():
 
             #Check if the actual enemy is colliding with the bullet. 
             if isColliding(enemiesList_pos[i][j][0], enemiesList_pos[i][j][1], \
-                            ENEMY1_1_SIZE_X, ENEMY1_1_SIZE_Y) and enemiesList_active[i,j] == True:
+                            ENEMY1_1_SIZE_X, ENEMY1_1_SIZE_Y, bullet_pos_x, bullet_pos_y) \
+                    and enemiesList_active[i,j] == True:
                 #print("Colliding with: ", enemiesList[i][j])
                 any_bullet = False #Deletes bullet
-                enemiesList_active[i,j] = False #""""""""deletes"""""""" the enemy.
+                enemiesList_active[i,j] = False #""deletes"" the enemy.
             
             #Check if the enemy is able to shoot.
             if frontEnemy(i,j):
@@ -309,6 +308,10 @@ def enemiesHandler():
                 
                     enemyShootHandler(enemiesList_bullets[i,j], \
                                         enemiesList_pos[i][j][0], enemiesList_pos[i][j][1])
+
+            if enemiesList_pos[i][j][1] >= enemies_limit:
+                initGame()
+                initialScreen = True
 
             if enemiesList_pos[i][j][0] >= WIDTH - ENEMY1_1_SIZE_X:
                 direction = -1
@@ -341,21 +344,75 @@ def enemiesHandler():
 
 def mothershipHandler():
     global mothership_pos_x, mothership_pos_y, mothership_spawn
-
+    global any_bullet
+    
     spawn_proc = random.randint(1,1000)
     #print(spawn_proc)
     if spawn_proc % 500 == 0:
         mothership_spawn = True
 
+    if isColliding(mothership_pos_x, mothership_pos_y, MOTHER_SIZE_X, MOTHER_SIZE_Y, \
+                    bullet_pos_x, bullet_pos_y):
+        any_bullet = False #Deletes bullet.
+        mothership_spawn = False #Deletes mothership.
+
     if mothership_pos_x >= 0 - MOTHER_SIZE_X  \
             and mothership_pos_x <= WIDTH \
             and mothership_spawn:
-
         drawSprite(mothership, mothership_pos_x, mothership_pos_y)
         mothership_pos_x += mothership_movement
     else:
         mothership_pos_x = 0 - MOTHER_SIZE_X
         mothership_spawn = False
+
+def initGame():
+    global enemiesList, enemiesList_pos, enemiesList_active, enemiesList_bullets
+    global player_pos_x, player_pos_y, any_bullet
+    global enemy1_1_pos_x, enemy1_1_pos_y, enemy2_1_pos_x, enemy2_1_pos_y, enemy3_1_pos_x, enemy3_1_pos_y
+    global enemies_movement
+
+    #Reinitialize meaningful position variables
+    player_pos_x = WIDTH / 2 - PLAYER_SIZE_X
+    player_pos_y = HEIGHT - PLAYER_SIZE_Y - 30
+
+    enemy1_1_pos_x = WIDTH - 30 - ENEMY1_1_SIZE_X
+    enemy1_1_pos_y = 50
+
+    enemy2_1_pos_x = WIDTH - 30 - ENEMY2_1_SIZE_X
+    enemy2_1_pos_y = enemy1_1_pos_y + ENEMY1_1_SIZE_Y
+
+    enemy3_1_pos_x = WIDTH - 30 - ENEMY3_1_SIZE_X
+    enemy3_1_pos_y = enemy2_1_pos_y + ENEMY2_1_SIZE_Y + 5
+
+    mothership_pos_x = 0 - MOTHER_SIZE_X
+    mothership_pos_y = 25
+
+    #Update other variables
+    any_bullet = False
+    enemies_movement = 1
+
+    #Loads all enemies into enemiesList variable, in a matrix form.
+    i = 0
+    while i < enemies_rows:
+        j = 0
+        while j < enemies_columns:
+        
+            if i % 3 == 0: #Enemy1
+                enemiesList[i][j] = enemy1
+            elif i % 3 == 1: #Enemy2
+                enemiesList[i][j] = enemy2
+            elif i % 3 == 2: #Enemy3
+                enemiesList[i][j] = enemy3
+            enemiesList_active[i,j] = True
+
+            #Destroy all enemies bullets instances
+            if enemiesList_bullets[i,j] !=0:
+                enemiesList_bullets[i,j].setSpawn(False)
+
+            j += 1
+        i += 1
+
+    
 
 def shootHandler():
     global bullet_pos_x, bullet_pos_y, any_bullet
@@ -371,13 +428,12 @@ def shootHandler():
         any_bullet = False
 
 def enemyShootHandler(bullet_instance, pos_x, pos_y):
-    #global enemy_bullet_pos_x, enemy_bullet_pos_y, 
-    #global enemy_shoot_spawn
+    global initialScreen 
 
     enemy_shoot_proc = random.randint(1,1000)
     #print(enemy_shoot_proc)
     if enemy_shoot_proc % 250 == 0:
-        print("Shooting!")
+        #print("Shooting!")
         bullet_instance.setSpawn(True)
         
     if bullet_instance.getPosY() < HEIGHT - ENEMY_BULLET_SIZE_Y \
@@ -392,6 +448,13 @@ def enemyShootHandler(bullet_instance, pos_x, pos_y):
         #Destroy bullet
         bullet_instance.setSpawn(False)
 
+    #Check wheter the bullet hits the player
+    if isColliding(player_pos_x, player_pos_y, PLAYER_SIZE_X, PLAYER_SIZE_Y, \
+                    bullet_instance.getPosX(), bullet_instance.getPosY()):
+        print("Player dead!")
+        bullet_instance.setSpawn(False)
+        initialScreen = True
+        
 
 def drawEnemies():
     '''
@@ -419,8 +482,11 @@ while True:
     Main game loop.
     '''
     if initialScreen: #This code only executes when we're in the initial screen.
+        screen.blit(background, (0,0))
         InitialScreen.initialScreenHandler(font_16, font_18, font_35, screen)
+        initGame()
 
+        #InitialScreen.blink_counter = 0 if InitialScreen.blink_counter == 50 else InitialScreen.blink_counter + 1
         if InitialScreen.blink_counter == 50:
             InitialScreen.blink_counter = 0
         else:
