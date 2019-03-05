@@ -20,10 +20,12 @@ SCREEN_Y_CENTER = HEIGHT / 2
 
 direction = 1
 increase_speed_counter = 1 
-initialScreen = True
 any_bullet = False
 any_enemy_bullet = False
 mothership_spawn = False
+
+initialScreen = True
+gameoverScreen = False
 
 #[Pygame Setups]
 pygame.init()
@@ -35,6 +37,7 @@ InitialScreen = InitScreen()
 
 #[Gameplay variables]
 player_movement = 5
+player_lives = 3
 shoot_speed = 22
 
 enemies_rows = 6
@@ -249,6 +252,18 @@ def drawSprite(surface, width, height):
     '''
     screen.blit(surface,(width,height))
 
+def uiManager():
+    '''
+    Method for all the stuff related with UI
+    '''
+    global screen, font_16, font_18, font_35, player_lives
+
+    player_lives_number = font_16.render(str(player_lives), True, (255,255,255))
+    
+    resized_player = pygame.transform.scale(player, (PLAYER_SIZE_X // 2, PLAYER_SIZE_Y // 2))
+    drawSprite(resized_player, 20, HEIGHT - 33)
+    screen.blit(player_lives_number, (50, HEIGHT - 25))
+
 def isColliding(pos_x, pos_y, width, height, bullet_x, bullet_y):
     '''
     Checks if the sprite passed is colliding with the bullet. 
@@ -279,10 +294,11 @@ def enemiesHandler():
     '''
     global enemy1_1_pos_x, enemy2_1_pos_x, enemy3_1_pos_x, enemy1_1_pos_y, direction
     global increase_speed_counter, enemies_movement
-    global any_bullet, aux
+    global any_bullet
 
-
+    enemies_left = False
     row_already_lowered = False
+
     i = 0
     while i < enemies_rows:
         j = 0
@@ -308,11 +324,13 @@ def enemiesHandler():
                 
                     enemyShootHandler(enemiesList_bullets[i,j], \
                                         enemiesList_pos[i][j][0], enemiesList_pos[i][j][1])
-
+            
+            #GameOver state.
             if enemiesList_pos[i][j][1] >= enemies_limit:
                 initGame()
                 initialScreen = True
 
+            #Update direction when side limit is reached.
             if enemiesList_pos[i][j][0] >= WIDTH - ENEMY1_1_SIZE_X:
                 direction = -1
 
@@ -326,9 +344,17 @@ def enemiesHandler():
                 if not row_already_lowered:
                     enemy1_1_pos_y += 20
                     row_already_lowered = True
+            
+            #Check if there's any enemy left
+            if enemiesList_active[i,j] == True:
+                enemies_left = True
 
             j += 1
         i += 1
+    
+    #Win state if there's no enemy left
+    if not enemies_left:
+        initialScreen = True
 
     #After a while, increases the enemies movement.
     if increase_speed_counter % 500 == 0:
@@ -371,7 +397,7 @@ def initGame():
     global enemy1_1_pos_x, enemy1_1_pos_y, enemy2_1_pos_x, enemy2_1_pos_y, enemy3_1_pos_x, enemy3_1_pos_y
     global enemies_movement
 
-    #Reinitialize meaningful position variables
+    #Reinitialize meaninful position variables
     player_pos_x = WIDTH / 2 - PLAYER_SIZE_X
     player_pos_y = HEIGHT - PLAYER_SIZE_Y - 30
 
@@ -428,7 +454,7 @@ def shootHandler():
         any_bullet = False
 
 def enemyShootHandler(bullet_instance, pos_x, pos_y):
-    global initialScreen 
+    global initialScreen, gameoverScreen, player_lives
 
     enemy_shoot_proc = random.randint(1,1000)
     #print(enemy_shoot_proc)
@@ -451,10 +477,13 @@ def enemyShootHandler(bullet_instance, pos_x, pos_y):
     #Check wheter the bullet hits the player
     if isColliding(player_pos_x, player_pos_y, PLAYER_SIZE_X, PLAYER_SIZE_Y, \
                     bullet_instance.getPosX(), bullet_instance.getPosY()):
-        print("Player dead!")
+        print("Player hit!")
+        player_lives -= 1
         bullet_instance.setSpawn(False)
-        initialScreen = True
         
+        if player_lives == 0: #Player is dead: game overstate
+            initialScreen = True #Just for debuggin. First implementation.
+            gameoverScreen = True
 
 def drawEnemies():
     '''
@@ -496,6 +525,7 @@ while True:
     else:
         screen.blit(background,(0,0))
         eventHandler()
+        uiManager()
 
         drawSprite(player, player_pos_x, player_pos_y)
         #drawSprite(enemy1_1, enemy1_1_pos_x, enemy1_1_pos_y)
