@@ -4,6 +4,7 @@ import sys
 import random
 import numpy as np
 from InitScreen import InitScreen
+from GameOverScreen import GameOverScreen
 from EnemyBullet import EnemyBullet
 
 '''
@@ -34,6 +35,7 @@ fpsClock = pygame.time.Clock()
 
 #[Class instances]
 InitialScreen = InitScreen()
+GameOverScreen = GameOverScreen()
 
 #[Gameplay variables]
 player_movement = 5
@@ -215,8 +217,8 @@ def eventHandler():
     '''
     This method takes care of everything related with inputs.
     '''
+    global initialScreen, gameoverScreen, player_pos_x, any_bullet
 
-    global initialScreen, player_pos_x, any_bullet
     keys = pygame.key.get_pressed()
 
     for event in pygame.event.get():
@@ -228,6 +230,11 @@ def eventHandler():
         if event.type == pygame.KEYDOWN and initialScreen:
             #print("Some key pressed")
             initialScreen = False
+        
+        if event.type == pygame.KEYDOWN and gameoverScreen:
+            #print("Some key pressed")
+            gameoverScreen = False
+
 
     if keys[K_LEFT]: #Player is moving left
 
@@ -317,6 +324,7 @@ def enemiesHandler():
 
                 if enemiesList_bullets[i,j] == 0:
                     enemiesList_bullets[i,j] = EnemyBullet()
+
                 enemyShootHandler(enemiesList_bullets[i,j], \
                                     enemiesList_pos[i][j][0], enemiesList_pos[i][j][1])
             #If the enemy is killed (either it's not front enemy any more), bullet keeps traveling.
@@ -328,21 +336,21 @@ def enemiesHandler():
             #GameOver state.
             if enemiesList_pos[i][j][1] >= enemies_limit:
                 initGame()
-                initialScreen = True
+                gameoverScreen = True
 
             #Update direction when side limit is reached.
             if enemiesList_pos[i][j][0] >= WIDTH - ENEMY1_1_SIZE_X:
                 direction = -1
 
                 if not row_already_lowered:
-                    enemy1_1_pos_y += 20
+                    enemy1_1_pos_y += 30
                     row_already_lowered = True
 
             elif enemiesList_pos[i][j][0] <= 0:
                 direction = 1
 
                 if not row_already_lowered:
-                    enemy1_1_pos_y += 20
+                    enemy1_1_pos_y += 30
                     row_already_lowered = True
             
             #Check if there's any enemy left
@@ -354,7 +362,8 @@ def enemiesHandler():
     
     #Win state if there's no enemy left
     if not enemies_left:
-        initialScreen = True
+        #pauseFor()
+        initGame()
 
     #After a while, increases the enemies movement.
     if increase_speed_counter % 500 == 0:
@@ -393,7 +402,7 @@ def mothershipHandler():
 
 def initGame():
     global enemiesList, enemiesList_pos, enemiesList_active, enemiesList_bullets
-    global player_pos_x, player_pos_y, any_bullet
+    global player_pos_x, player_pos_y, player_lives, any_bullet
     global enemy1_1_pos_x, enemy1_1_pos_y, enemy2_1_pos_x, enemy2_1_pos_y, enemy3_1_pos_x, enemy3_1_pos_y
     global enemies_movement
 
@@ -416,6 +425,7 @@ def initGame():
     #Update other variables
     any_bullet = False
     enemies_movement = 1
+    
 
     #Loads all enemies into enemiesList variable, in a matrix form.
     i = 0
@@ -439,7 +449,6 @@ def initGame():
         i += 1
 
     
-
 def shootHandler():
     global bullet_pos_x, bullet_pos_y, any_bullet
     #print(any_bullet)
@@ -452,6 +461,7 @@ def shootHandler():
         bullet_pos_x = player_pos_x + PLAYER_SIZE_X // 2 - 6
         bullet_pos_y = player_pos_y + 12
         any_bullet = False
+
 
 def enemyShootHandler(bullet_instance, pos_x, pos_y):
     global initialScreen, gameoverScreen, player_lives
@@ -480,10 +490,24 @@ def enemyShootHandler(bullet_instance, pos_x, pos_y):
         print("Player hit!")
         player_lives -= 1
         bullet_instance.setSpawn(False)
+        pauseFor(2)
         
         if player_lives == 0: #Player is dead: game overstate
-            initialScreen = True #Just for debuggin. First implementation.
             gameoverScreen = True
+
+def pauseFor(time = 1):
+    '''
+    Method for stopping the game loop for a certain amount of time.
+    At 30 fps, 30 increments per seconds.
+    '''
+    time *= 30
+    counter = 0
+    while counter < time:
+        #screen.blit(background,(0,0))
+        pygame.display.update()
+        fpsClock.tick(30)
+        counter += 1
+    
 
 def drawEnemies():
     '''
@@ -510,10 +534,12 @@ while True:
     '''
     Main game loop.
     '''
+
     if initialScreen: #This code only executes when we're in the initial screen.
         screen.blit(background, (0,0))
         InitialScreen.initialScreenHandler(font_16, font_18, font_35, screen)
         initGame()
+        player_lives = 3
 
         #InitialScreen.blink_counter = 0 if InitialScreen.blink_counter == 50 else InitialScreen.blink_counter + 1
         if InitialScreen.blink_counter == 50:
@@ -522,6 +548,20 @@ while True:
             InitialScreen.blink_counter += 1
 
         eventHandler()
+
+    elif gameoverScreen:
+        screen.blit(background, (0,0))
+        GameOverScreen.gameOverScreenHandler(font_16, font_18, font_35, screen)
+        initGame()
+        player_lives = 3
+
+        if GameOverScreen.blink_counter == 50:
+            GameOverScreen.blink_counter = 0
+        else:
+            GameOverScreen.blink_counter += 1
+
+        eventHandler()
+
     else:
         screen.blit(background,(0,0))
         eventHandler()
