@@ -187,7 +187,7 @@ enemy3_1_pos_x = WIDTH - 30 - ENEMY3_1_SIZE_X
 enemy3_1_pos_y = enemy2_1_pos_y + ENEMY2_1_SIZE_Y + 5
 
 mothership_pos_x = 0 - MOTHER_SIZE_X
-mothership_pos_y = 25
+mothership_pos_y = 30
 
 bullet_pos_x = player_pos_x + PLAYER_SIZE_X // 2 - 6
 bullet_pos_y = player_pos_y + 12
@@ -264,12 +264,32 @@ def uiManager():
     Method for all the stuff related with UI
     '''
     global screen, font_16, font_18, font_35, player_lives
-
-    player_lives_number = font_16.render(str(player_lives), True, (255,255,255))
     
+    player_lives_number = font_16.render(str(player_lives), True, (255,255,255))
+    score_title = font_16.render("SCORE", True, (255,255,255))
+    score_number = font_16.render("000", True, (255,255,255))
+    hi_score_title = font_16.render("HI-SCORE", True, (255,255,255))
+    hi_score_number = font_16.render("000", True, (255,255,255))
+
+    #Upper UI
+    screen.blit(score_title, (8, 10))
+    screen.blit(hi_score_title, (130, 10))
+
+    screen.blit(score_number, (20, 30))
+    screen.blit(hi_score_number, (170, 30))
+    
+    #Lower UI
+    pygame.draw.line(screen, (0,255,0), (0, HEIGHT - 28), (WIDTH, HEIGHT - 28), 2)
+
     resized_player = pygame.transform.scale(player, (PLAYER_SIZE_X // 2, PLAYER_SIZE_Y // 2))
-    drawSprite(resized_player, 20, HEIGHT - 33)
-    screen.blit(player_lives_number, (50, HEIGHT - 25))
+
+    if player_lives == 3:
+        drawSprite(resized_player, 43, HEIGHT - 30)
+        drawSprite(resized_player, 72, HEIGHT - 30)
+    elif player_lives == 2:
+        drawSprite(resized_player, 43, HEIGHT - 30)
+    
+    screen.blit(player_lives_number, (14, HEIGHT - 22))
 
 def isColliding(pos_x, pos_y, width, height, bullet_x, bullet_y):
     '''
@@ -404,14 +424,14 @@ def initGame():
     global enemiesList, enemiesList_pos, enemiesList_active, enemiesList_bullets
     global player_pos_x, player_pos_y, player_lives, any_bullet
     global enemy1_1_pos_x, enemy1_1_pos_y, enemy2_1_pos_x, enemy2_1_pos_y, enemy3_1_pos_x, enemy3_1_pos_y
-    global enemies_movement
+    global enemies_movement, mothership_pos_y, MOTHER_SIZE_Y
 
     #Reinitialize meaninful position variables
     player_pos_x = WIDTH / 2 - PLAYER_SIZE_X
-    player_pos_y = HEIGHT - PLAYER_SIZE_Y - 30
+    player_pos_y = HEIGHT - PLAYER_SIZE_Y - 35
 
-    enemy1_1_pos_x = WIDTH - 30 - ENEMY1_1_SIZE_X
-    enemy1_1_pos_y = 50
+    enemy1_1_pos_x = WIDTH - 180 - ENEMY1_1_SIZE_X
+    enemy1_1_pos_y = mothership_pos_y + MOTHER_SIZE_Y
 
     enemy2_1_pos_x = WIDTH - 30 - ENEMY2_1_SIZE_X
     enemy2_1_pos_y = enemy1_1_pos_y + ENEMY1_1_SIZE_Y
@@ -420,7 +440,7 @@ def initGame():
     enemy3_1_pos_y = enemy2_1_pos_y + ENEMY2_1_SIZE_Y + 5
 
     mothership_pos_x = 0 - MOTHER_SIZE_X
-    mothership_pos_y = 25
+    mothership_pos_y = 30
 
     #Update other variables
     any_bullet = False
@@ -560,7 +580,10 @@ while True:
         else:
             GameOverScreen.blink_counter += 1
 
-        eventHandler()
+        if GameOverScreen.activate_input_counter > 100:
+            eventHandler()
+        else:
+            GameOverScreen.activate_input_counter += 1
 
     else:
         screen.blit(background,(0,0))

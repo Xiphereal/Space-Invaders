@@ -14,13 +14,14 @@ class  GameOverScreen:
     SCREEN_X_CENTER = WIDTH / 2
     SCREEN_Y_CENTER = HEIGHT / 2
 
-
     blink_colors = [(0,255,0), (0,0,0)] #[Green, Black]
     blink_counter = 0
 
+    activate_input_counter = 0
+
     def __init__(self):
         blink_counter = 0
-    
+        activate_input_counter = 0
 
     def gameOverScreenHandler(self, font_16, font_18, font_35, screen):
         '''
