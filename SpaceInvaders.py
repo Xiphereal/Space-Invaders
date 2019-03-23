@@ -5,6 +5,7 @@ import random
 import numpy as np
 from InitScreen import InitScreen
 from GameOverScreen import GameOverScreen
+from ScoreManager import ScoreManager
 from EnemyBullet import EnemyBullet
 
 '''
@@ -34,8 +35,9 @@ pygame.display.set_caption("Space Invaders") #Sets the window title
 fpsClock = pygame.time.Clock()
 
 #[Class instances]
-InitialScreen = InitScreen()
 GameOverScreen = GameOverScreen()
+ScoreManager = ScoreManager()
+InitialScreen = InitScreen(ScoreManager.getHiScore())
 
 #[Gameplay variables]
 player_movement = 5
@@ -224,6 +226,7 @@ def eventHandler():
     for event in pygame.event.get():
 
         if event.type == pygame.QUIT or keys[K_ESCAPE]:
+            ScoreManager.closeFile()
             pygame.quit()
             sys.exit()
 
@@ -267,9 +270,9 @@ def uiManager():
     
     player_lives_number = font_16.render(str(player_lives), True, (255,255,255))
     score_title = font_16.render("SCORE", True, (255,255,255))
-    score_number = font_16.render("000", True, (255,255,255))
+    score_number = font_16.render(str(ScoreManager.getScore()), True, (255,255,255))
     hi_score_title = font_16.render("HI-SCORE", True, (255,255,255))
-    hi_score_number = font_16.render("000", True, (255,255,255))
+    hi_score_number = font_16.render(str(ScoreManager.getHiScore()), True, (255,255,255))
 
     #Upper UI
     screen.blit(score_title, (8, 10))
@@ -338,6 +341,7 @@ def enemiesHandler():
                 #print("Colliding with: ", enemiesList[i][j])
                 any_bullet = False #Deletes bullet
                 enemiesList_active[i,j] = False #""deletes"" the enemy.
+                ScoreManager.increase(i)
             
             #Check if the enemy is able to shoot.
             if frontEnemy(i,j):
@@ -347,6 +351,7 @@ def enemiesHandler():
 
                 enemyShootHandler(enemiesList_bullets[i,j], \
                                     enemiesList_pos[i][j][0], enemiesList_pos[i][j][1])
+
             #If the enemy is killed (either it's not front enemy any more), bullet keeps traveling.
             elif enemiesList_bullets[i,j] != 0 and enemiesList_bullets[i,j].getSpawn(): 
                 
@@ -410,6 +415,7 @@ def mothershipHandler():
                     bullet_pos_x, bullet_pos_y):
         any_bullet = False #Deletes bullet.
         mothership_spawn = False #Deletes mothership.
+        ScoreManager.increase()
 
     if mothership_pos_x >= 0 - MOTHER_SIZE_X  \
             and mothership_pos_x <= WIDTH \
@@ -573,6 +579,7 @@ while True:
         screen.blit(background, (0,0))
         GameOverScreen.gameOverScreenHandler(font_16, font_18, font_35, screen)
         initGame()
+        ScoreManager.reset()
         player_lives = 3
 
         if GameOverScreen.blink_counter == 50:

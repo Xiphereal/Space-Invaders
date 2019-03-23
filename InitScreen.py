@@ -19,8 +19,11 @@ class InitScreen:
     blink_colors = [(0,255,0), (0,0,0)] #[Green, Black]
     blink_counter = 0
 
-    def __init__(self):
-         blink_counter = 0
+    hi_score = ""
+
+    def __init__(self, score):
+        blink_counter = 0
+        self.hi_score = str(score)
     
     def initialScreenHandler(self, font_16, font_18, font_35, screen):
         '''
@@ -29,7 +32,7 @@ class InitScreen:
         final_color = self.blink_colors[1]
         main_title_space = font_35.render("SPACE", True, (0,255,0))
         main_title_invaders = font_35.render("INVADERS", True, (0,255,0))
-        hiscore_title = font_18.render("HI-SCORE: 000", True, (0,255,0))
+        hiscore_title = font_18.render("HI-SCORE: " + self.hi_score, True, (0,255,0))
         
         if self.blink_counter < 25:
             final_color = self.blink_colors[0]
