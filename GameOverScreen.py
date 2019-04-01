@@ -17,21 +17,25 @@ class  GameOverScreen:
     blink_colors = [(0,255,0), (0,0,0)] #[Green, Black]
     blink_counter = 0
 
+    hi_score = ""
+    #score = ""
+
     activate_input_counter = 0
 
-    def __init__(self):
+    def __init__(self, hi_score):
         blink_counter = 0
         activate_input_counter = 0
+        self.hi_score = str(hi_score)
 
-    def gameOverScreenHandler(self, font_16, font_18, font_35, screen):
+    def gameOverScreenHandler(self, font_16, font_18, font_35, score, screen):
         '''
         Draws the game over screen titles into 'screen' parameter.
         '''
         final_color = self.blink_colors[1]
         main_title_game = font_35.render("GAME", True, (0,255,0))
         main_title_over = font_35.render("OVER", True, (0,255,0))
-        hiscore_title = font_18.render("HI-SCORE: 000", True, (0,255,0))
-        score_title = font_18.render("SCORE: 000", True, (0,255,0))
+        hiscore_title = font_18.render("HI-SCORE: " + self.hi_score, True, (0,255,0))
+        score_title = font_18.render("SCORE: " + str(score), True, (0,255,0))
         
         if self.blink_counter < 25:
             final_color = self.blink_colors[0]

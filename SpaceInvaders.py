@@ -1,6 +1,7 @@
 from pygame.locals import *
 import pygame
 import sys
+import os
 import random
 import numpy as np
 from InitScreen import InitScreen
@@ -30,13 +31,24 @@ initialScreen = True
 gameoverScreen = False
 
 #[Pygame Setups]
+pygame.mixer.pre_init(22050, -16, 2, 512)
 pygame.init()
 pygame.display.set_caption("Space Invaders") #Sets the window title
 fpsClock = pygame.time.Clock()
 
+#[Pygame Sound]
+player_shoot_sound = pygame.mixer.Sound(os.path.join("SFX", "shoot.wav"))
+enemy_death_sound = pygame.mixer.Sound(os.path.join("SFX", "invaderkilled.wav"))
+player_death_sound = pygame.mixer.Sound(os.path.join("SFX", "player_explosion.wav"))
+mothership_sound = pygame.mixer.Sound(os.path.join("SFX", "ufo_lowpitch.wav"))
+
+mothership_channel = pygame.mixer.Channel(5)
+
+
+
 #[Class instances]
-GameOverScreen = GameOverScreen()
 ScoreManager = ScoreManager()
+GameOverScreen = GameOverScreen(ScoreManager.getHiScore())
 InitialScreen = InitScreen(ScoreManager.getHiScore())
 
 #[Gameplay variables]
@@ -237,6 +249,7 @@ def eventHandler():
         if event.type == pygame.KEYDOWN and gameoverScreen:
             #print("Some key pressed")
             gameoverScreen = False
+            ScoreManager.reset()
 
 
     if keys[K_LEFT]: #Player is moving left
@@ -251,6 +264,8 @@ def eventHandler():
 
     if keys[K_SPACE]: #Player fires!
         if not any_bullet:
+            player_shoot_sound.set_volume(0.6)
+            player_shoot_sound.play()
             bullet_pos_x = player_pos_x + PLAYER_SIZE_X // 2 - 6
             bullet_pos_y = player_pos_y + 12
             drawSprite(bullet, bullet_pos_x, bullet_pos_y)
@@ -339,6 +354,8 @@ def enemiesHandler():
                             ENEMY1_1_SIZE_X, ENEMY1_1_SIZE_Y, bullet_pos_x, bullet_pos_y) \
                     and enemiesList_active[i,j] == True:
                 #print("Colliding with: ", enemiesList[i][j])
+                enemy_death_sound.set_volume(0.8)
+                enemy_death_sound.play()
                 any_bullet = False #Deletes bullet
                 enemiesList_active[i,j] = False #""deletes"" the enemy.
                 ScoreManager.increase(i)
@@ -410,9 +427,13 @@ def mothershipHandler():
     #print(spawn_proc)
     if spawn_proc % 500 == 0:
         mothership_spawn = True
+        if not mothership_channel.get_busy():
+            mothership_channel.play(mothership_sound)
 
     if isColliding(mothership_pos_x, mothership_pos_y, MOTHER_SIZE_X, MOTHER_SIZE_Y, \
                     bullet_pos_x, bullet_pos_y):
+        mothership_sound.stop()
+        enemy_death_sound.play()
         any_bullet = False #Deletes bullet.
         mothership_spawn = False #Deletes mothership.
         ScoreManager.increase()
@@ -420,6 +441,7 @@ def mothershipHandler():
     if mothership_pos_x >= 0 - MOTHER_SIZE_X  \
             and mothership_pos_x <= WIDTH \
             and mothership_spawn:
+        
         drawSprite(mothership, mothership_pos_x, mothership_pos_y)
         mothership_pos_x += mothership_movement
     else:
@@ -514,6 +536,7 @@ def enemyShootHandler(bullet_instance, pos_x, pos_y):
     if isColliding(player_pos_x, player_pos_y, PLAYER_SIZE_X, PLAYER_SIZE_Y, \
                     bullet_instance.getPosX(), bullet_instance.getPosY()):
         print("Player hit!")
+        player_death_sound.play()
         player_lives -= 1
         bullet_instance.setSpawn(False)
         pauseFor(2)
@@ -577,9 +600,9 @@ while True:
 
     elif gameoverScreen:
         screen.blit(background, (0,0))
-        GameOverScreen.gameOverScreenHandler(font_16, font_18, font_35, screen)
+        GameOverScreen.gameOverScreenHandler(font_16, font_18, font_35, ScoreManager.getScore(), screen)
         initGame()
-        ScoreManager.reset()
+        
         player_lives = 3
 
         if GameOverScreen.blink_counter == 50:

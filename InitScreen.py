@@ -21,9 +21,9 @@ class InitScreen:
 
     hi_score = ""
 
-    def __init__(self, score):
+    def __init__(self, hi_score):
         blink_counter = 0
-        self.hi_score = str(score)
+        self.hi_score = str(hi_score)
     
     def initialScreenHandler(self, font_16, font_18, font_35, screen):
         '''
