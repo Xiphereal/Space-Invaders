@@ -54,13 +54,13 @@ InitialScreen = InitScreen(ScoreManager.getHiScore())
 #[Gameplay variables]
 player_movement = 5
 player_lives = 3
-shoot_speed = 22
+shoot_speed = 22 #Should be 22
 
 enemies_rows = 6
 enemies_columns = 7
 enemies_movement = 1
 enemies_speed_increase = 1
-enemies_bullet_speed = 2 #Should be 10
+enemies_bullet_speed = 10 #Should be 10
 enemies_limit = HEIGHT - 70
 
 mothership_movement = 7
@@ -363,7 +363,6 @@ def enemiesHandler():
             
             #Check if the enemy is able to shoot.
             if frontEnemy(i,j):
-
                 if enemiesList_bullets[i,j] == 0:
                     enemiesList_bullets[i,j] = EnemyBullet()
 
@@ -372,9 +371,8 @@ def enemiesHandler():
 
             #If the enemy is killed (either it's not front enemy anymore), bullet keeps traversing the screen.
             elif enemiesList_bullets[i,j] != 0 and enemiesList_bullets[i,j].getSpawn(): 
-                
-                    enemyShootHandler(enemiesList_bullets[i,j], \
-                                        enemiesList_pos[i][j][0], enemiesList_pos[i][j][1])
+                enemyShootHandler(enemiesList_bullets[i,j], \
+                                    enemiesList_pos[i][j][0], enemiesList_pos[i][j][1])
             
             #GameOver state.
             if enemiesList_pos[i][j][1] >= enemies_limit:
@@ -546,10 +544,10 @@ def enemyShootHandler(bullet_instance, pos_x, pos_y):
             gameoverScreen = True
 
     #Check if bullets collide with each other
-    if isColliding(bullet_pos_x, bullet_pos_y, BULLET_SIZE_X + 5, BULLET_SIZE_Y + 5, \
+    if isColliding(bullet_pos_x, bullet_pos_y, BULLET_SIZE_X, BULLET_SIZE_Y + 80, \
                         bullet_instance.getPosX(), bullet_instance.getPosY()):
-        bullet_instance.setSpawn(False)
         any_bullet = False
+        bullet_instance.setSpawn(False)
 
 
 
