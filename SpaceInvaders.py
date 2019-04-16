@@ -36,6 +36,7 @@ pygame.init()
 pygame.display.set_caption("Space Invaders") #Sets the window title
 fpsClock = pygame.time.Clock()
 
+
 #[Pygame Sound]
 player_shoot_sound = pygame.mixer.Sound(os.path.join("SFX", "shoot.wav"))
 enemy_death_sound = pygame.mixer.Sound(os.path.join("SFX", "invaderkilled.wav"))
@@ -43,8 +44,7 @@ player_death_sound = pygame.mixer.Sound(os.path.join("SFX", "player_explosion.wa
 mothership_sound = pygame.mixer.Sound(os.path.join("SFX", "ufo_lowpitch.wav"))
 
 mothership_channel = pygame.mixer.Channel(5)
-
-
+ 
 
 #[Class instances]
 ScoreManager = ScoreManager()
@@ -60,7 +60,7 @@ enemies_rows = 6
 enemies_columns = 7
 enemies_movement = 1
 enemies_speed_increase = 1
-enemies_bullet_speed = 10
+enemies_bullet_speed = 2 #Should be 10
 enemies_limit = HEIGHT - 70
 
 mothership_movement = 7
@@ -70,6 +70,7 @@ mothership_movement = 7
 font_16 = pygame.font.Font("PressStart2P.ttf", 16)
 font_18 = pygame.font.Font("PressStart2P.ttf", 18)
 font_35 = pygame.font.Font("PressStart2P.ttf", 35)
+
 
 #Stores "spriteID.txt" content in a list. Then, evaluates the ID for loading sprites.
 spriteID = open("spritesID.txt").readlines()
@@ -369,7 +370,7 @@ def enemiesHandler():
                 enemyShootHandler(enemiesList_bullets[i,j], \
                                     enemiesList_pos[i][j][0], enemiesList_pos[i][j][1])
 
-            #If the enemy is killed (either it's not front enemy any more), bullet keeps traveling.
+            #If the enemy is killed (either it's not front enemy anymore), bullet keeps traversing the screen.
             elif enemiesList_bullets[i,j] != 0 and enemiesList_bullets[i,j].getSpawn(): 
                 
                     enemyShootHandler(enemiesList_bullets[i,j], \
@@ -490,7 +491,7 @@ def initGame():
             enemiesList_active[i,j] = True
 
             #Destroy all enemies bullets instances
-            if enemiesList_bullets[i,j] !=0:
+            if enemiesList_bullets[i,j] != 0:
                 enemiesList_bullets[i,j].setSpawn(False)
 
             j += 1
@@ -512,7 +513,7 @@ def shootHandler():
 
 
 def enemyShootHandler(bullet_instance, pos_x, pos_y):
-    global initialScreen, gameoverScreen, player_lives
+    global initialScreen, gameoverScreen, player_lives, any_bullet
 
     enemy_shoot_proc = random.randint(1,1000)
     #print(enemy_shoot_proc)
@@ -543,6 +544,14 @@ def enemyShootHandler(bullet_instance, pos_x, pos_y):
         
         if player_lives == 0: #Player is dead: game overstate
             gameoverScreen = True
+
+    #Check if bullets collide with each other
+    if isColliding(bullet_pos_x, bullet_pos_y, BULLET_SIZE_X + 5, BULLET_SIZE_Y + 5, \
+                        bullet_instance.getPosX(), bullet_instance.getPosY()):
+        bullet_instance.setSpawn(False)
+        any_bullet = False
+
+
 
 def pauseFor(time = 1):
     '''
@@ -598,7 +607,7 @@ while True:
 
         eventHandler()
 
-    elif gameoverScreen:
+    elif gameoverScreen: #game over code block
         screen.blit(background, (0,0))
         GameOverScreen.gameOverScreenHandler(font_16, font_18, font_35, ScoreManager.getScore(), screen)
         initGame()
