@@ -1,10 +1,12 @@
 player Player.png
+player_explosion Player_explosion.png
 enemy1_1 Enemy1_1.png
 enemy1_2 Enemy1_2.png
 enemy2_1 Enemy2_1.png
 enemy2_2 Enemy2_2.png
 enemy3_1 Enemy3_1.png
 enemy3_2 Enemy3_2.png
+enemy_explosion Enemy_explosion.png
 mothership Mothership.png
 background Background.png
 bullet Bullet.png

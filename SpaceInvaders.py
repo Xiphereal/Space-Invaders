@@ -76,9 +76,9 @@ font_35 = pygame.font.Font("PressStart2P.ttf", 35)
 spriteID = open("spritesID.txt").readlines()
 
 counter = 0
+SRF = 4 #Sprite Redimension Factor: How much will the sprites be downscaled.
 while counter < len(spriteID):
     line = spriteID[counter].split()
-    SRF = 4 #Sprite Redimension Factor: How much will the sprites be downscaled.
 
     if line[0] == "player":
         print("Loading player file: " + line[1])
@@ -88,6 +88,15 @@ while counter < len(spriteID):
         player = pygame.transform.scale(player, (PLAYER_SIZE_X//3, PLAYER_SIZE_Y//3))
         PLAYER_SIZE_X, PLAYER_SIZE_Y = player.get_rect().size[0], \
                                         player.get_rect().size[1]
+
+    elif line[0] == "player_explosion":
+        print("Loading player_explosion file: " + line[1])
+        player_explosion = pygame.image.load(line[1])
+        PLAYER_EXP_SIZE_X, PLAYER_EXP_SIZE_Y = player_explosion.get_rect().size[0], \
+                                        player_explosion.get_rect().size[1]
+        player_explosion = pygame.transform.scale(player_explosion, (PLAYER_EXP_SIZE_X//3, PLAYER_EXP_SIZE_Y//3))
+        PLAYER_EXP_SIZE_X, PLAYER_EXP_SIZE_Y = player_explosion.get_rect().size[0], \
+                                        player_explosion.get_rect().size[1]
 
     elif line[0] == "enemy1_1":
         print("Loading enemy1_1 file: " + line[1])
@@ -143,6 +152,15 @@ while counter < len(spriteID):
         ENEMY3_2_SIZE_X, ENEMY3_2_SIZE_Y =  enemy3_2.get_rect().size[0], \
                                             enemy3_2.get_rect().size[1]
 
+    elif line[0] == "enemy_explosion":
+        print("Loading enemy_explosion file: " + line[1])
+        enemy_explosion = pygame.image.load(line[1])
+        ENEMY_EXP_SIZE_X, ENEMY_EXP_SIZE_Y =  enemy_explosion.get_rect().size[0], \
+                                            enemy_explosion.get_rect().size[1]
+        enemy_explosion = pygame.transform.scale(enemy_explosion, (ENEMY_EXP_SIZE_X//SRF, ENEMY_EXP_SIZE_Y//SRF))
+        ENEMY_EXP_SIZE_X, ENEMY_EXP_SIZE_Y =  enemy_explosion.get_rect().size[0], \
+                                            enemy_explosion.get_rect().size[1]
+
     elif line[0] == "mothership":
         print("Loading mothership file: " + line[1])
         mothership = pygame.image.load(line[1])
@@ -160,6 +178,7 @@ while counter < len(spriteID):
         bullet = pygame.transform.scale(bullet, (BULLET_SIZE_X * 2, BULLET_SIZE_Y * 2))
         BULLET_SIZE_X, BULLET_SIZE_Y = bullet.get_rect().size[0], \
                                        bullet.get_rect().size[1]
+    
     elif line[0] == "enemy_bullet":
         print("Loading bullet file: " + line[1])
         enemy_bullet = pygame.image.load(line[1])
@@ -183,6 +202,8 @@ background = background.convert()
 enemy1 = [enemy1_1, enemy1_2] # Those variables store enemies with each animation.
 enemy2 = [enemy2_1, enemy2_2]
 enemy3 = [enemy3_1, enemy3_2]
+enemies_anim_counter = 0
+
 enemiesList = [[0] * enemies_columns for i in range(enemies_rows)] #Matrix for storing enemies.
 enemiesList_pos = [[0] * enemies_columns for i in range(enemies_rows)] #For storing each enemy position.
 enemiesList_active = np.zeros((enemies_rows, enemies_columns), dtype = bool) #For storing, ehh... yeah, another list.
@@ -222,6 +243,7 @@ while i < enemies_rows:
             enemiesList[i][j] = enemy2
         elif i % 3 == 2: #Enemy3
             enemiesList[i][j] = enemy3
+
         enemiesList_active[i,j] = True
 
         j += 1
@@ -358,6 +380,7 @@ def enemiesHandler():
                 enemy_death_sound.set_volume(0.8)
                 enemy_death_sound.play()
                 any_bullet = False #Deletes bullet
+                drawSprite(enemy_explosion, enemiesList_pos[i][j][0], enemiesList_pos[i][j][1])
                 enemiesList_active[i,j] = False #""deletes"" the enemy.
                 ScoreManager.increase(i)
             
@@ -538,6 +561,7 @@ def enemyShootHandler(bullet_instance, pos_x, pos_y):
         player_death_sound.play()
         player_lives -= 1
         bullet_instance.setSpawn(False)
+        drawSprite(player_explosion, player_pos_x, player_pos_y) 
         pauseFor(2)
         
         if player_lives == 0: #Player is dead: game overstate
@@ -568,16 +592,22 @@ def pauseFor(time = 1):
 def drawEnemies():
     '''
     Draws all enemies inside enemiesList variable.
-    '''  
+    '''
+    global enemies_anim_counter
+
     offset_y = 0
     i = 0
+
+    if enemies_anim_counter + 1 >= 30:
+        enemies_anim_counter = 0
+
     for row in enemiesList:
         offset_x = 0
         j = 0
         for enemy in row:
             
             if enemiesList_active[i][j] == True:
-                drawSprite(enemy[0], enemy1_1_pos_x - offset_x, enemy1_1_pos_y + offset_y)
+                drawSprite(enemy[enemies_anim_counter//15], enemy1_1_pos_x - offset_x, enemy1_1_pos_y + offset_y)
                 #Store each enemy position in a list.
                 enemiesList_pos[i][j] = [enemy1_1_pos_x - offset_x, enemy1_1_pos_y + offset_y]
 
@@ -585,6 +615,8 @@ def drawEnemies():
             j += 1
         offset_y += 40
         i += 1
+
+    enemies_anim_counter += 1
 
 while True: 
     '''
