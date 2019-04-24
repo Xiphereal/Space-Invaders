@@ -61,7 +61,7 @@ enemies_columns = 7
 enemies_movement = 1
 enemies_speed_increase = 1
 enemies_bullet_speed = 10 #Should be 10
-enemies_limit = HEIGHT - 70
+enemies_limit = HEIGHT - 100
 
 mothership_movement = 7
 
@@ -362,7 +362,7 @@ def enemiesHandler():
     '''
     global enemy1_1_pos_x, enemy2_1_pos_x, enemy3_1_pos_x, enemy1_1_pos_y, direction
     global increase_speed_counter, enemies_movement
-    global any_bullet
+    global any_bullet, gameoverScreen
 
     enemies_left = False
     row_already_lowered = False
@@ -667,7 +667,7 @@ while True:
         enemiesHandler()
         mothershipHandler()
         shootHandler()
-        
+        #pygame.draw.line(screen, (255,255,59), (0, enemies_limit), (WIDTH, enemies_limit), 2) #debug
 
     pygame.display.update()
     fpsClock.tick(30)
